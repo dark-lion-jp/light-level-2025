@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "light-level-2025",
+  "version": "${version}",
+  "name": "Light Level 2025",
+  "description": "displays block-light-level on top of the solid blocks",
+  "authors": [
+    "dark-lion-jp"
+  ],
+  "contact": {
+    "homepage": "",
+    "sources": ""
+  },
+  "license": "MIT",
+  "icon": "assets/light_level_2025/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.dark_lion_jp.light_level_2025.LightLevel2025"
+    ]
+  },
+  "mixins": [
+    "light_level_2025.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.12",
+    "minecraft": "~1.21.5",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
