@@ -16,9 +16,9 @@ public class LightLevel2025 implements ClientModInitializer {
   private static boolean enabled;
 
   public static void handleInputEvents() {
-	  while (keyToggle.wasPressed()) {
-		  enabled = !enabled;
-	  }
+    while (keyToggle.wasPressed()) {
+      enabled = !enabled;
+    }
   }
 
   public static boolean isEnabled() {
