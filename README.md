@@ -15,7 +15,7 @@ some improvements implemented.
 
 ### Dimension-Specific Color Coding
 
-- **OVERWORLD**
+- **OVER WORLD**
     - <span style="color: #40FF40;">GREEN</span>: Mobs cannot spawn
         - Block >= 1
     - <span style="color: #FFFF40;">YELLOW</span>: Mobs can spawn at night
