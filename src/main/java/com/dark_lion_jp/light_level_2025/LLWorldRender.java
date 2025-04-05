@@ -10,10 +10,51 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.LightType;
+import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 public class LLWorldRender {
+
+  private static int getTextColor(int blockLight, int skyLight) {
+    int neutral = 0xFFFFFF; // White, the dimension is not supported
+    int safe = 0x40FF40; // Green, mobs can't spawn
+    int warning = 0xFFFF40; // Yellow, mobs can spawn at night
+    int danger = 0xFF4040; // Red, mobs can always spawn
+
+    MinecraftClient client = MinecraftClient.getInstance();
+    if (client == null || client.world == null) {
+      return neutral;
+    }
+
+    var dimension = client.world.getRegistryKey().getValue();
+
+    if (dimension == World.OVERWORLD.getValue()) {
+      if (blockLight > 0) {
+        return safe;
+      }
+      if (skyLight > 7) {
+        return warning;
+      }
+      return danger;
+    }
+
+    if (dimension == World.NETHER.getValue()) {
+      if (blockLight > 11) {
+        return safe;
+      }
+      return danger;
+    }
+
+    if (dimension == World.END.getValue()) {
+      if (blockLight > 0) {
+        return safe;
+      }
+      return danger;
+    }
+
+    return neutral;
+  }
 
   private static void render(MatrixStack matrices, Camera camera,
       VertexConsumerProvider.Immediate bufferSource) {
@@ -64,16 +105,7 @@ public class LLWorldRender {
 
           int blockLight = world.getLightLevel(LightType.BLOCK, mutablePos);
           int skyLight = world.getLightLevel(LightType.SKY, mutablePos);
-          int color;
-          if (blockLight == 0) {
-            if (skyLight == 0) {
-              color = 0xFF4040;
-            } else {
-              color = 0xFFFF40;
-            }
-          } else {
-            color = 0x40FF40;
-          }
+          int color = getTextColor(blockLight, skyLight);
 
           matrices.push();
 
@@ -99,7 +131,7 @@ public class LLWorldRender {
               -textWidth / 2.0f,
               -textRenderer.fontHeight / 2.0f,
               color,
-              false,
+              true,
               positionMatrix,
               bufferSource,
               TextRenderer.TextLayerType.NORMAL,
