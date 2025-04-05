@@ -1,6 +1,5 @@
 package com.dark_lion_jp.light_level_2025;
 
-import java.lang.Math;
 import java.util.Arrays;
 import java.util.List;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -15,6 +14,7 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
@@ -39,9 +39,9 @@ public class LLWorldRenderer {
       1 / 48f;   // Text scale used when the debug screen is enabled.
   private static final float TEXT_SCALE_NORMAL = 1 / 32f;  // Normal text scale.
 
-  // Configuration constants for rendering range
-  private static final int RENDER_RANGE_HORIZONTAL = 16;    // Horizontal rendering range around the player.
-  private static final int RENDER_RANGE_VERTICAL = 8;      // Vertical rendering range around the player.
+  // Configuration constants for rendering distance
+  private static final int RENDER_DISTANCE_HORIZONTAL = 16;    // Horizontal rendering range around the player.
+  private static final int RENDER_DISTANCE_VERTICAL = 8;      // Vertical rendering range around the player.
 
   // List of blocks that should not have light levels rendered above them
   private static final List<Block> BLOCKS_TO_EXCLUDE_RENDERING = Arrays.asList(
@@ -70,8 +70,8 @@ public class LLWorldRenderer {
    * @param cameraRotation       The camera rotation.
    * @param blockLightLevel      The block-light level at the position.
    * @param skyLightLevel        The sky-light level at the position.
-   * @param textColor            The color of the text.
    * @param shouldShowBothValues Whether to show both block-light and sky-light levels.
+   * @param textColor            The color of the text.
    * @param textScale            The scale of the text.
    */
   private static void drawLightLevelText(
@@ -83,15 +83,11 @@ public class LLWorldRenderer {
       Quaternionf cameraRotation,
       int blockLightLevel,
       int skyLightLevel,
-      int textColor,
       boolean shouldShowBothValues,
+      int textColor,
       float textScale
   ) {
     matrices.push();
-
-    // Get the visual shape of the block at the drawing position.
-    BlockState blockState = world.getBlockState(positionToDrawAt);
-    VoxelShape visualShape = blockState.getOutlineShape(world, positionToDrawAt);
 
     // Determine the text to render.
     String textToRender;
@@ -102,6 +98,10 @@ public class LLWorldRenderer {
     }
     float textWidthScaled = textRenderer.getWidth(textToRender) * textScale;
     float textHeightScaled = textRenderer.fontHeight * textScale;
+
+    // Get the visual shape of the block at the drawing position.
+    BlockState blockState = world.getBlockState(positionToDrawAt);
+    VoxelShape visualShape = blockState.getOutlineShape(world, positionToDrawAt);
 
     // Calculate the base Y offset for the text, considering potential overlap with the block.
     float textOffsetY = getTextOffsetY(visualShape, textWidthScaled, textHeightScaled);
@@ -119,10 +119,9 @@ public class LLWorldRenderer {
     // Scale the text.
     matrices.scale(textScale, -textScale, textScale);
 
+    // Draw the text with shadow.
     float textWidth = textRenderer.getWidth(textToRender);
     Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
-
-    // Draw the text with shadow.
     textRenderer.draw(
         Text.of(textToRender),
         -textWidth / 2.0f,
@@ -153,9 +152,8 @@ public class LLWorldRenderer {
       return TEXT_COLOR_NEUTRAL;
     }
 
-    net.minecraft.util.Identifier currentDimension = world.getRegistryKey().getValue();
-
     int textColor;
+    Identifier currentDimension = world.getRegistryKey().getValue();
     if (currentDimension.equals(World.OVERWORLD.getValue())) {
       if (blockLightLevel > 0) {
         textColor = TEXT_COLOR_SAFE;
@@ -197,17 +195,15 @@ public class LLWorldRenderer {
     // If the block has a visual shape, check for potential XZ-axis overlap at any rotation.
     if (!visualShape.isEmpty()) {
       Box blockBoundingBox = visualShape.getBoundingBox();
-      float textMaxLength = (float) Math.sqrt(
-          Math.pow(textWidthScaled, 2) + Math.pow(textHeightScaled, 2));
+      float textMaxLength = (float) Math.hypot(textWidthScaled, textHeightScaled);
       boolean textOverlapped = blockBoundingBox.intersects(
-          0.5f - textMaxLength,
+          0.5f - textMaxLength / 2f,
           0,
-          0.5f - textMaxLength,
-          0.5f + textMaxLength,
+          0.5f - textMaxLength / 2f,
+          0.5f + textMaxLength / 2f,
           textHeightScaled,
-          0.5f + textMaxLength
+          0.5f + textMaxLength / 2f
       );
-
       if (textOverlapped) {
         textOffsetY += (float) blockBoundingBox.getLengthY(); // Add block height if overlap occurs.
       }
@@ -236,25 +232,26 @@ public class LLWorldRenderer {
       return;
     }
 
-    Camera camera = worldRenderContext.camera();
-    VertexConsumerProvider.Immediate bufferSource = client.getBufferBuilders()
-        .getEntityVertexConsumers();
-    PlayerEntity player = client.player;
     World world = client.world;
     TextRenderer gameTextRenderer = client.textRenderer;
+    VertexConsumerProvider.Immediate bufferSource = client.getBufferBuilders()
+        .getEntityVertexConsumers();
+
+    Camera camera = worldRenderContext.camera();
     Vec3d cameraPosition = camera.getPos();
     Quaternionf cameraRotation = new Quaternionf(camera.getRotation());
-
-    boolean shouldShowBothValues = client.getDebugHud().shouldShowDebugHud();
-    float textScale = shouldShowBothValues ? TEXT_SCALE_FOR_DEBUG : TEXT_SCALE_NORMAL;
 
     matrices.push();
     matrices.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
 
+    boolean shouldShowBothValues = client.getDebugHud().shouldShowDebugHud();
+    float textScale = shouldShowBothValues ? TEXT_SCALE_FOR_DEBUG : TEXT_SCALE_NORMAL;
+
+    PlayerEntity player = client.player;
     BlockPos playerPosition = player.getBlockPos();
     BlockPos.Mutable positionToRenderAt = playerPosition.mutableCopy();
-    int renderRangeHorizontal = RENDER_RANGE_HORIZONTAL;
-    int renderRangeVertical = RENDER_RANGE_VERTICAL;
+    int renderRangeHorizontal = RENDER_DISTANCE_HORIZONTAL;
+    int renderRangeVertical = RENDER_DISTANCE_VERTICAL;
 
     for (int offsetX = -renderRangeHorizontal; offsetX <= renderRangeHorizontal; offsetX++) {
       for (int offsetZ = -renderRangeHorizontal; offsetZ <= renderRangeHorizontal;
@@ -288,8 +285,8 @@ public class LLWorldRenderer {
               cameraRotation,
               blockLightLevel,
               skyLightLevel,
-              textColor,
               shouldShowBothValues,
+              textColor,
               textScale
           );
         }
@@ -319,22 +316,27 @@ public class LLWorldRenderer {
     BlockState blockStateBelow = world.getBlockState(positionBelow);
     Block blockBelow = blockStateBelow.getBlock();
 
+    // Do not render light levels above excluded blocks.
     if (BLOCKS_TO_EXCLUDE_RENDERING.contains(blockBelow)) {
       return false;
     }
 
+    // Only render if the block below is opaque.
     if (!blockStateBelow.isOpaque()) {
       return false;
     }
 
+    // Do not render if the current position is not air-like (has a collision shape).
     if (!blockStateAtPositionToCheck.getCollisionShape(world, positionToCheck).isEmpty()) {
       return false;
     }
 
+    // Exception for specific blocks below that allow spawning despite being non-full.
     if (BLOCKS_BELOW_ALLOWING_SPAWN_EXCEPTION.contains(blockBelow)) {
       return true;
     }
 
+    // Check if the block below has a full upward-facing surface for spawning.
     VoxelShape collisionShapeBelow = blockStateBelow.getCollisionShape(world,
         positionBelow);
     if (!collisionShapeBelow.getFace(Direction.UP).isEmpty()) {
