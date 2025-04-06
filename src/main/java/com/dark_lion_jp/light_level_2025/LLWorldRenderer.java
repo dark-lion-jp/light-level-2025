@@ -20,7 +20,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.LightType;
@@ -270,13 +269,13 @@ public class LLWorldRenderer {
 
           // Get the visual shape of the block at the drawing position.
           BlockState blockStateRenderAt = world.getBlockState(positionToRenderAt);
-          VoxelShape visualShapeRenderAt = blockStateRenderAt.getOutlineShape(world,
+          VoxelShape blockVisualShapeRenderAt = blockStateRenderAt.getOutlineShape(world,
               positionToRenderAt);
           Optional<Box> blockBoundingBoxRenderAt;
-          if (!visualShapeRenderAt.isEmpty()) {
-            blockBoundingBoxRenderAt = Optional.of(visualShapeRenderAt.getBoundingBox());
-          } else {
+          if (blockVisualShapeRenderAt.isEmpty()) {
             blockBoundingBoxRenderAt = Optional.empty();
+          } else {
+            blockBoundingBoxRenderAt = Optional.of(blockVisualShapeRenderAt.getBoundingBox());
           }
           if (!shouldRenderLightLevel(world, frustum, positionToRenderAt,
               blockStateRenderAt, blockBoundingBoxRenderAt)) {
@@ -343,9 +342,18 @@ public class LLWorldRenderer {
     }
 
     // Do not render if the block is outside the frustum.
-    if (frustum.isPresent() && blockBoundingBoxToCheck.isPresent() && !frustum.get()
-        .isVisible(blockBoundingBoxToCheck.get())) {
-      return false;
+    if (frustum.isPresent() && blockBoundingBoxToCheck.isPresent()) {
+      Box blockBoundingBoxWithCoordinate = new Box(
+          positionToCheck.getX() + blockBoundingBoxToCheck.get().minX,
+          positionToCheck.getY() + blockBoundingBoxToCheck.get().minY,
+          positionToCheck.getZ() + blockBoundingBoxToCheck.get().minZ,
+          positionToCheck.getX() + blockBoundingBoxToCheck.get().maxX,
+          positionToCheck.getY() + blockBoundingBoxToCheck.get().maxY,
+          positionToCheck.getZ() + blockBoundingBoxToCheck.get().maxZ
+      );
+      if (!frustum.get().isVisible(blockBoundingBoxWithCoordinate)) {
+        return false;
+      }
     }
 
     // Exception for specific blocks below that allow spawning despite being non-full.
@@ -354,14 +362,13 @@ public class LLWorldRenderer {
     }
 
     // Check if the block below has a full upward-facing surface for spawning.
-    VoxelShape collisionShapeBelow = blockStateBelow.getCollisionShape(world,
-        positionBelow);
+    VoxelShape collisionShapeBelow = blockStateBelow.getCollisionShape(world, positionBelow);
     if (!collisionShapeBelow.getFace(Direction.UP).isEmpty()) {
       Box upFaceBoundingBox = collisionShapeBelow.getFace(Direction.UP).getBoundingBox();
-      boolean coversFullXZ = MathHelper.approximatelyEquals(upFaceBoundingBox.minX, 0.0D) &&
-          MathHelper.approximatelyEquals(upFaceBoundingBox.maxX, 1.0D) &&
-          MathHelper.approximatelyEquals(upFaceBoundingBox.minZ, 0.0D) &&
-          MathHelper.approximatelyEquals(upFaceBoundingBox.maxZ, 1.0D);
+      boolean coversFullXZ = upFaceBoundingBox.minX == 0.0D &&
+          upFaceBoundingBox.maxX == 1.0D &&
+          upFaceBoundingBox.minZ == 0.0D &&
+          upFaceBoundingBox.maxZ == 1.0D;
       boolean hasSignificantY = upFaceBoundingBox.maxY > upFaceBoundingBox.minY;
 
       return coversFullXZ && hasSignificantY;
