@@ -57,11 +57,10 @@ The rendering of light levels on a target block will be excluded if:
     - `minecraft:chain_command_block`
     - `minecraft:command_block`
     - `minecraft:repeating_command_block`
-- The target block is not opaque (meaning it's transparent in terms of rendering, not light
-  transmission).
+- The target block is not opaque (visually transparent).
     - Slabs and stairs are opaque and therefore not excluded.
 - The target block does not have a full square top surface.
-    - Examples include stairs and chests.
+    - Examples include right-side-up stairs and chests.
 - A block above the target block has a collision shape.
     - Examples include lanterns and snow (2 pixels high or more).
 
