@@ -13,7 +13,7 @@ some improvements implemented.
 
 ## Features
 
-### Dimension-Specific Colors
+### Dimension-Specific Color Coding
 
 #### Overworld
 
