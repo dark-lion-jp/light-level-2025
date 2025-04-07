@@ -1,15 +1,17 @@
 # Light Level 2025
 
-Press **F9** to see the block light levels.
-
-Inspired by [LightLevel By parzivail](https://github.com/Parzivail-Modding-Team/LightLevel), with
-some improvements implemented.
-
 <div style="display: inline">
   <img src="https://img.shields.io/badge/Minecraft-1.21.5-white">
   <img src="https://img.shields.io/badge/Fabric_Loader-0.16.12-white">
   <img src="https://img.shields.io/github/actions/workflow/status/dark-lion-jp/light-level-2025/build.yml?branch=main">
 </div>
+
+Press **F9** to see the block light levels.
+
+Inspired by [LightLevel By parzivail](https://github.com/Parzivail-Modding-Team/LightLevel), with
+some improvements implemented.
+
+![Screenshot for Over World](https://raw.githubusercontent.com/dark-lion-jp/light-level-2025/refs/heads/main/src/main/resources/assets/light_level_2025/screenshot-for-overworld.png)
 
 ## Features
 
