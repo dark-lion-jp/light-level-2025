@@ -19,7 +19,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.LightType;
@@ -343,7 +342,7 @@ public class LLWorldRenderer {
 
     // Do not render if the block is outside the frustum.
     if (frustum.isPresent() && blockBoundingBoxToCheck.isPresent()) {
-      Box blockBoundingBoxWithCoordinate = new Box(
+      Box blockBoundingBoxWithCoordinates = new Box(
           positionToCheck.getX() + blockBoundingBoxToCheck.get().minX,
           positionToCheck.getY() + blockBoundingBoxToCheck.get().minY,
           positionToCheck.getZ() + blockBoundingBoxToCheck.get().minZ,
@@ -351,7 +350,7 @@ public class LLWorldRenderer {
           positionToCheck.getY() + blockBoundingBoxToCheck.get().maxY,
           positionToCheck.getZ() + blockBoundingBoxToCheck.get().maxZ
       );
-      if (!frustum.get().isVisible(blockBoundingBoxWithCoordinate)) {
+      if (!frustum.get().isVisible(blockBoundingBoxWithCoordinates)) {
         return false;
       }
     }
@@ -363,15 +362,19 @@ public class LLWorldRenderer {
 
     // Check if the block below has a full upward-facing surface for spawning.
     VoxelShape collisionShapeBelow = blockStateBelow.getCollisionShape(world, positionBelow);
-    if (!collisionShapeBelow.getFace(Direction.UP).isEmpty()) {
-      Box upFaceBoundingBox = collisionShapeBelow.getFace(Direction.UP).getBoundingBox();
-      boolean coversFullXZ = upFaceBoundingBox.minX == 0.0D &&
-          upFaceBoundingBox.maxX == 1.0D &&
-          upFaceBoundingBox.minZ == 0.0D &&
-          upFaceBoundingBox.maxZ == 1.0D;
-      boolean hasSignificantY = upFaceBoundingBox.maxY > upFaceBoundingBox.minY;
+    if (!collisionShapeBelow.isEmpty()) {
+      for (int x = 0; x <= 1; x++) {
+        for (int z = 0; z <= 1; z++) {
+          Vec3d point = new Vec3d(x, 1, z);
+          Optional<Vec3d> pointClosest = collisionShapeBelow.getClosestPointTo(point);
+          // If the closest point is empty or not the corner itself, it's not a full surface.
+          if (pointClosest.isEmpty() || !pointClosest.get().equals(point)) {
+            return false;
+          }
+        }
+      }
 
-      return coversFullXZ && hasSignificantY;
+      return true;
     }
 
     return false;
