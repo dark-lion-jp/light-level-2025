@@ -48,8 +48,8 @@ public class LLWorldRenderer {
       Blocks.AIR,
       Blocks.BARRIER,
       Blocks.BEDROCK,
-      Blocks.COMMAND_BLOCK,
       Blocks.CHAIN_COMMAND_BLOCK,
+      Blocks.COMMAND_BLOCK,
       Blocks.REPEATING_COMMAND_BLOCK
   );
 
