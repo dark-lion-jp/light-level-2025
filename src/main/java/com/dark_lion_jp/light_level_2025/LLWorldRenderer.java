@@ -2,6 +2,7 @@ package com.dark_lion_jp.light_level_2025;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -9,6 +10,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
@@ -17,8 +19,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.LightType;
@@ -44,7 +44,8 @@ public class LLWorldRenderer {
   private static final int RENDER_DISTANCE_VERTICAL = 8;      // Vertical rendering range around the player.
 
   // List of blocks that should not have light levels rendered above them
-  private static final List<Block> BLOCKS_TO_EXCLUDE_RENDERING = Arrays.asList(
+  private static final List<Block> BLOCKS_EXCLUDED_FROM_RENDERING = Arrays.asList(
+      Blocks.AIR,
       Blocks.BARRIER,
       Blocks.BEDROCK,
       Blocks.COMMAND_BLOCK,
@@ -62,24 +63,24 @@ public class LLWorldRenderer {
   /**
    * Draws the light level text at the specified position.
    *
-   * @param world                The current game world.
-   * @param matrices             The matrix stack for rendering transformations.
-   * @param textRenderer         The text renderer instance.
-   * @param bufferSource         The vertex consumer provider.
-   * @param positionToDrawAt     The position to draw the text at.
-   * @param cameraRotation       The camera rotation.
-   * @param blockLightLevel      The block-light level at the position.
-   * @param skyLightLevel        The sky-light level at the position.
-   * @param shouldShowBothValues Whether to show both block-light and sky-light levels.
-   * @param textColor            The color of the text.
-   * @param textScale            The scale of the text.
+   * @param matrices               The matrix stack for rendering transformations.
+   * @param textRenderer           The text renderer instance.
+   * @param bufferSource           The vertex consumer provider.
+   * @param positionToDraw         The position to draw the text at.
+   * @param blockBoundingBoxDrawAt The optional bounding box of the block at the drawing position.
+   * @param cameraRotation         The camera rotation.
+   * @param blockLightLevel        The block-light level at the position.
+   * @param skyLightLevel          The sky-light level at the position.
+   * @param shouldShowBothValues   Whether to show both block-light and sky-light levels.
+   * @param textColor              The color of the text.
+   * @param textScale              The scale of the text.
    */
   private static void drawLightLevelText(
-      World world,
       MatrixStack matrices,
       TextRenderer textRenderer,
       VertexConsumerProvider.Immediate bufferSource,
-      BlockPos positionToDrawAt,
+      BlockPos positionToDraw,
+      Optional<Box> blockBoundingBoxDrawAt,
       Quaternionf cameraRotation,
       int blockLightLevel,
       int skyLightLevel,
@@ -99,18 +100,16 @@ public class LLWorldRenderer {
     float textWidthScaled = textRenderer.getWidth(textToRender) * textScale;
     float textHeightScaled = textRenderer.fontHeight * textScale;
 
-    // Get the visual shape of the block at the drawing position.
-    BlockState blockState = world.getBlockState(positionToDrawAt);
-    VoxelShape visualShape = blockState.getOutlineShape(world, positionToDrawAt);
-
     // Calculate the base Y offset for the text, considering potential overlap with the block.
-    float textOffsetY = getTextOffsetY(visualShape, textWidthScaled, textHeightScaled);
+    float textOffsetY = getTextOffsetY(blockBoundingBoxDrawAt,
+        textWidthScaled,
+        textHeightScaled);
 
     // Translate to the drawing position.
     matrices.translate(
-        positionToDrawAt.getX() + 0.5,
-        positionToDrawAt.getY() + textOffsetY,
-        positionToDrawAt.getZ() + 0.5
+        positionToDraw.getX() + 0.5,
+        positionToDraw.getY() + textOffsetY,
+        positionToDraw.getZ() + 0.5
     );
 
     // Rotate the text to face the camera.
@@ -148,10 +147,6 @@ public class LLWorldRenderer {
    * @return The color code for the text.
    */
   private static int getTextColor(World world, int blockLightLevel, int skyLightLevel) {
-    if (world == null) {
-      return TEXT_COLOR_NEUTRAL;
-    }
-
     int textColor;
     Identifier currentDimension = world.getRegistryKey().getValue();
     if (currentDimension.equals(World.OVERWORLD.getValue())) {
@@ -183,20 +178,20 @@ public class LLWorldRenderer {
   /**
    * Calculates the necessary Y offset for the text to avoid overlapping with the block.
    *
-   * @param visualShape      The visual shape of the block.
-   * @param textWidthScaled  The scaled width of the text.
-   * @param textHeightScaled The scaled height of the text.
+   * @param blockBoundingBoxDrawAt The optional bounding box of the block.
+   * @param textWidthScaled        The scaled width of the text.
+   * @param textHeightScaled       The scaled height of the text.
    * @return The Y offset to apply to the text position.
    */
-  private static float getTextOffsetY(VoxelShape visualShape, float textWidthScaled,
+  private static float getTextOffsetY(Optional<Box> blockBoundingBoxDrawAt,
+      float textWidthScaled,
       float textHeightScaled) {
     float textOffsetY = TEXT_OFFSET_Y_BASE;
 
     // If the block has a visual shape, check for potential XZ-axis overlap at any rotation.
-    if (!visualShape.isEmpty()) {
-      Box blockBoundingBox = visualShape.getBoundingBox();
+    if (blockBoundingBoxDrawAt.isPresent()) {
       float textMaxLength = (float) Math.hypot(textWidthScaled, textHeightScaled);
-      boolean textOverlapped = blockBoundingBox.intersects(
+      boolean textOverlapped = blockBoundingBoxDrawAt.get().intersects(
           0.5f - textMaxLength / 2f,
           0,
           0.5f - textMaxLength / 2f,
@@ -205,7 +200,8 @@ public class LLWorldRenderer {
           0.5f + textMaxLength / 2f
       );
       if (textOverlapped) {
-        textOffsetY += (float) blockBoundingBox.getLengthY(); // Add block height if overlap occurs.
+        textOffsetY += (float) blockBoundingBoxDrawAt.get()
+            .getLengthY(); // Add block height if overlap occurs.
       }
     }
     return textOffsetY;
@@ -226,6 +222,8 @@ public class LLWorldRenderer {
         || client.textRenderer == null) {
       return;
     }
+
+    Optional<Frustum> frustum = Optional.ofNullable(worldRenderContext.frustum());
 
     MatrixStack matrices = worldRenderContext.matrixStack();
     if (matrices == null) {
@@ -268,7 +266,18 @@ public class LLWorldRenderer {
             continue;
           }
 
-          if (!shouldRenderLightLevel(world, positionToRenderAt)) {
+          // Get the visual shape of the block at the drawing position.
+          BlockState blockStateRenderAt = world.getBlockState(positionToRenderAt);
+          VoxelShape blockVisualShapeRenderAt = blockStateRenderAt.getOutlineShape(world,
+              positionToRenderAt);
+          Optional<Box> blockBoundingBoxRenderAt;
+          if (blockVisualShapeRenderAt.isEmpty()) {
+            blockBoundingBoxRenderAt = Optional.empty();
+          } else {
+            blockBoundingBoxRenderAt = Optional.of(blockVisualShapeRenderAt.getBoundingBox());
+          }
+          if (!shouldRenderLightLevel(world, frustum, positionToRenderAt,
+              blockStateRenderAt, blockBoundingBoxRenderAt)) {
             continue;
           }
 
@@ -277,11 +286,11 @@ public class LLWorldRenderer {
           int textColor = getTextColor(world, blockLightLevel, skyLightLevel);
 
           drawLightLevelText(
-              world,
               matrices,
               gameTextRenderer,
               bufferSource,
               positionToRenderAt,
+              blockBoundingBoxRenderAt,
               cameraRotation,
               blockLightLevel,
               skyLightLevel,
@@ -299,25 +308,25 @@ public class LLWorldRenderer {
   /**
    * Checks if the light level information should be rendered at the given position. This check
    * determines if a hostile mob could potentially spawn at this location based on the block's
-   * properties.
+   * properties and visibility within the frustum.
    *
-   * @param world           The current game world.
-   * @param positionToCheck The position to check.
+   * @param world                   The current game world.
+   * @param frustum                 The optional frustum for visibility checking.
+   * @param positionToCheck         The position to check.
+   * @param blockStateToCheck       The block state at the position to check.
+   * @param blockBoundingBoxToCheck The optional bounding box of the block at the position to
+   *                                check.
    * @return True if the light level should be rendered, false otherwise.
    */
-  private static boolean shouldRenderLightLevel(World world, BlockPos positionToCheck) {
-    if (world == null) {
-      return false;
-    }
-
-    BlockState blockStateAtPositionToCheck = world.getBlockState(positionToCheck);
-
+  private static boolean shouldRenderLightLevel(World world,
+      Optional<Frustum> frustum, BlockPos positionToCheck, BlockState blockStateToCheck,
+      Optional<Box> blockBoundingBoxToCheck) {
     BlockPos positionBelow = positionToCheck.down();
     BlockState blockStateBelow = world.getBlockState(positionBelow);
     Block blockBelow = blockStateBelow.getBlock();
 
     // Do not render light levels above excluded blocks.
-    if (BLOCKS_TO_EXCLUDE_RENDERING.contains(blockBelow)) {
+    if (BLOCKS_EXCLUDED_FROM_RENDERING.contains(blockBelow)) {
       return false;
     }
 
@@ -327,8 +336,23 @@ public class LLWorldRenderer {
     }
 
     // Do not render if the current position is not air-like (has a collision shape).
-    if (!blockStateAtPositionToCheck.getCollisionShape(world, positionToCheck).isEmpty()) {
+    if (!blockStateToCheck.getCollisionShape(world, positionToCheck).isEmpty()) {
       return false;
+    }
+
+    // Do not render if the block is outside the frustum.
+    if (frustum.isPresent() && blockBoundingBoxToCheck.isPresent()) {
+      Box blockBoundingBoxWithCoordinates = new Box(
+          positionToCheck.getX() + blockBoundingBoxToCheck.get().minX,
+          positionToCheck.getY() + blockBoundingBoxToCheck.get().minY,
+          positionToCheck.getZ() + blockBoundingBoxToCheck.get().minZ,
+          positionToCheck.getX() + blockBoundingBoxToCheck.get().maxX,
+          positionToCheck.getY() + blockBoundingBoxToCheck.get().maxY,
+          positionToCheck.getZ() + blockBoundingBoxToCheck.get().maxZ
+      );
+      if (!frustum.get().isVisible(blockBoundingBoxWithCoordinates)) {
+        return false;
+      }
     }
 
     // Exception for specific blocks below that allow spawning despite being non-full.
@@ -337,17 +361,20 @@ public class LLWorldRenderer {
     }
 
     // Check if the block below has a full upward-facing surface for spawning.
-    VoxelShape collisionShapeBelow = blockStateBelow.getCollisionShape(world,
-        positionBelow);
-    if (!collisionShapeBelow.getFace(Direction.UP).isEmpty()) {
-      Box upFaceBoundingBox = collisionShapeBelow.getFace(Direction.UP).getBoundingBox();
-      boolean coversFullXZ = MathHelper.approximatelyEquals(upFaceBoundingBox.minX, 0.0D) &&
-          MathHelper.approximatelyEquals(upFaceBoundingBox.maxX, 1.0D) &&
-          MathHelper.approximatelyEquals(upFaceBoundingBox.minZ, 0.0D) &&
-          MathHelper.approximatelyEquals(upFaceBoundingBox.maxZ, 1.0D);
-      boolean hasSignificantY = upFaceBoundingBox.maxY > upFaceBoundingBox.minY;
+    VoxelShape collisionShapeBelow = blockStateBelow.getCollisionShape(world, positionBelow);
+    if (!collisionShapeBelow.isEmpty()) {
+      for (int x = 0; x <= 1; x++) {
+        for (int z = 0; z <= 1; z++) {
+          Vec3d point = new Vec3d(x, 1, z);
+          Optional<Vec3d> pointClosest = collisionShapeBelow.getClosestPointTo(point);
+          // If the closest point is empty or not the corner itself, it's not a full surface.
+          if (pointClosest.isEmpty() || !pointClosest.get().equals(point)) {
+            return false;
+          }
+        }
+      }
 
-      return coversFullXZ && hasSignificantY;
+      return true;
     }
 
     return false;
