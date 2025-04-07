@@ -17,27 +17,27 @@ some improvements implemented.
 
 #### Overworld
 
-- <span style="color: #40FF40;">GREEN</span>: Mobs cannot spawn
+- GREEN: Mobs cannot spawn
     - Block Light >= 1
-- <span style="color: #FFFF40;">YELLOW</span>: Mobs can spawn at night
+- YELLOW: Mobs can spawn at night
     - Block Light = 0
     - Sky Light >= 8
-- <span style="color: #FF4040;">RED</span>: Mobs can always potentially spawn
+- RED: Mobs can always potentially spawn
     - Block Light = 0
     - Sky Light <= 7
 
 #### The Nether
 
-- <span style="color: #40FF40;">GREEN</span>: Mobs cannot spawn
+- GREEN: Mobs cannot spawn
     - Block Light >= 12
-- <span style="color: #FF4040;">RED</span>: Mobs can always potentially spawn
+- RED: Mobs can always potentially spawn
     - Block Light <= 11
 
 #### The End
 
-- <span style="color: #40FF40;">GREEN</span>: Mobs cannot spawn
+- GREEN: Mobs cannot spawn
     - Block Light >= 1
-- <span style="color: #FF4040;">RED</span>: Mobs can always potentially spawn
+- RED: Mobs can always potentially spawn
     - Block Light = 0
 
 ### Debug Mode
