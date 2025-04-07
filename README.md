@@ -1,6 +1,6 @@
 # Light Level 2025
 
-Press **F9** to see the block light level.
+Press **F9** to see the block light levels.
 
 Inspired by [LightLevel By parzivail](https://github.com/Parzivail-Modding-Team/LightLevel), with
 some improvements implemented.
@@ -42,34 +42,48 @@ some improvements implemented.
 
 ### Debug Mode
 
-Press **F3** to show both the block light and the sky light.
+Press **F3** to show both the block light and the sky light levels.
 
 ## Technical Features
 
-### Block Exclusion Conditions for Light Level Rendering
+### Block Exclusion Conditions
 
-The rendering of light levels on a target block will be excluded if:
+The rendering on a target block will be excluded if:
 
 - The target block is one of the following:
-    - `minecraft:air`
-    - `minecraft:barrier`
-    - `minecraft:bedrock`
-    - `minecraft:chain_command_block`
-    - `minecraft:command_block`
-    - `minecraft:repeating_command_block`
-- The target block is not opaque (meaning it's transparent in terms of rendering, not light
-  transmission).
-    - Slabs and stairs are opaque and therefore not excluded.
+    - `air`
+    - `barrier`
+    - `bedrock`
+    - `chain_command_block`
+    - `command_block`
+    - `repeating_command_block`
+- The target block is not opaque (visually transparent).
+    - **Examples Excluded**:
+        - `water`
+        - `glass`
+    - **Examples Not Excluded**:
+        - slabs
+        - stairs
 - The target block does not have a full square top surface.
-    - Examples include stairs and chests.
+    - **Examples Excluded**:
+        - right-side-up slabs
+        - right-side-up stairs
+    - **Examples Not Excluded**:
+        - up-side-down slabs
+        - up-side-down stairs
 - A block above the target block has a collision shape.
-    - Examples include lanterns and snow (2 pixels high or more).
+    - **Examples Excluded**:
+        - `ladder`
+        - `snow` (layers count >= 2)
+    - **Examples Not Excluded**:
+        - `vine`
+        - `snow` (layer count = 1)
 
 ### Y Offset
 
 If a non-colliding block is above the target block and its appearance obstructs the text, the light
-levels will be shown above the visual.
+level will be shown above the visual.
 
 ### Culling
 
-This mod does not render the light levels for a target block that is invisible to the player.
+This mod does not render the light level for a target block that is invisible to the player.
