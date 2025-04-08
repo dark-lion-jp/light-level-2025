@@ -50,7 +50,7 @@ Press **F3** to show both the block light and the sky light levels.
 
 ### Block Exclusion Conditions
 
-The rendering on a target block will be excluded if:
+The rendering on a target block will be skipped if:
 
 - The target block is one of the following:
     - `air`
@@ -79,7 +79,7 @@ The rendering on a target block will be excluded if:
         - `snow` (layers count >= 2)
     - **Examples Not Excluded**:
         - `vine`
-        - `snow` (layer count = 1)
+        - `snow` (layers count = 1)
 
 ### Y Offset
 
