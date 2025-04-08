@@ -1,9 +1,9 @@
 # Light Level 2025
 
 <div style="display: inline">
-  <img src="https://img.shields.io/badge/Minecraft-25w15a-white">
-  <img src="https://img.shields.io/badge/Fabric_Loader-0.16.13-white">
-  <img src="https://img.shields.io/badge/Fabric_API-0.119.10%2B1.21.6-white">
+  <img src="https://img.shields.io/badge/Minecraft-1.21.5-white">
+  <img src="https://img.shields.io/badge/Fabric_Loader-0.16.12-white">
+  <img src="https://img.shields.io/badge/Fabric_API-0.119.6%2B1.21.5-white">
   <img src="https://img.shields.io/github/actions/workflow/status/dark-lion-jp/light-level-2025/build.yml?branch=main">
 </div>
 
@@ -15,11 +15,6 @@ some improvements implemented.
 ![Screenshot for Over World](https://raw.githubusercontent.com/dark-lion-jp/light-level-2025/refs/heads/main/src/main/resources/assets/light_level_2025/screenshot-for-overworld.png)
 
 ## Dependencies
-
-You can find the versions in the description of each file.
-
-- Fabric Loader
-    - [Download it on https://fabricmc.net/](https://fabricmc.net/)
 
 - Fabric API
     - [Download it on modrinth](https://modrinth.com/mod/fabric-api)
