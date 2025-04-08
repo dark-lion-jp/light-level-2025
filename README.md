@@ -3,6 +3,7 @@
 <div style="display: inline">
   <img src="https://img.shields.io/badge/Minecraft-1.21.5-white">
   <img src="https://img.shields.io/badge/Fabric_Loader-0.16.12-white">
+  <img src="https://img.shields.io/badge/Fabric_API-0.119.6%2B1.21.5-white">
   <img src="https://img.shields.io/github/actions/workflow/status/dark-lion-jp/light-level-2025/build.yml?branch=main">
 </div>
 
@@ -12,6 +13,12 @@ Inspired by [LightLevel By parzivail](https://github.com/Parzivail-Modding-Team/
 some improvements implemented.
 
 ![Screenshot for Over World](https://raw.githubusercontent.com/dark-lion-jp/light-level-2025/refs/heads/main/src/main/resources/assets/light_level_2025/screenshot-for-overworld.png)
+
+## Dependencies
+
+- Fabric API
+    - [Download it on modrinth](https://modrinth.com/mod/fabric-api)
+    - [View source on GitHub](https://github.com/FabricMC/fabric)
 
 ## Features
 
