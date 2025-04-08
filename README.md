@@ -16,9 +16,14 @@ some improvements implemented.
 
 ## Dependencies
 
+You can find the versions in the description of each file.
+
+- Fabric Loader
+    - [Download it](https://fabricmc.net/use/installer/) on fabricmc.net
+
 - Fabric API
-    - [Download it on modrinth](https://modrinth.com/mod/fabric-api)
-    - [View source on GitHub](https://github.com/FabricMC/fabric)
+    - [Download it](https://modrinth.com/mod/fabric-api) on modrinth
+    - [View source](https://github.com/FabricMC/fabric) on GitHub
 
 ## Features
 
