@@ -18,6 +18,10 @@ repositories {
     // for more information about repositories.
 }
 
+configurations {
+    jarDependency
+}
+
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -27,6 +31,9 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
+    // YamlBeans
+    implementation "com.esotericsoftware.yamlbeans:yamlbeans:${project.yaml_beans_version}"
+    jarDependency "com.esotericsoftware.yamlbeans:yamlbeans:${project.yaml_beans_version}"
 }
 
 processResources {
@@ -57,6 +64,12 @@ jar {
     from("LICENSE") {
         rename { "${it}_${inputs.properties.archivesName}" }
     }
+
+    from {
+        configurations.jarDependency.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
 }
 
 // configure the maven publication
@@ -75,4 +88,43 @@ publishing {
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
     }
+}
+
+tasks.register('generateBuildConfig') {
+    def configVersion = project.findProperty('config_version') ?: "1.0"
+    def configPath = project.findProperty('config_path') ?: "light-level-2025.yaml"
+
+    inputs.property("config_version", configVersion)
+    inputs.property("config_path", configPath)
+
+    def outputDir = layout.buildDirectory.dir("generated/sources/buildConfig/com/dark_lion_jp/light_level_2025")
+
+    outputs.dir(outputDir)
+
+    doLast {
+        def file = outputDir.get().file("BuildConfig.java").asFile
+        file.parentFile.mkdirs()
+        file.text = """
+            package com.dark_lion_jp.light_level_2025;
+
+            public class BuildConfig {
+                public static final int CONFIG_VERSION = ${configVersion};
+                public static final String CONFIG_PATH = "${configPath}";
+            }
+        """.stripIndent()
+    }
+}
+sourceSets {
+    main {
+        java {
+            srcDir layout.buildDirectory.dir("generated/sources/buildConfig")
+        }
+    }
+}
+
+tasks.named("compileJava") {
+    dependsOn(tasks.named("generateBuildConfig"))
+}
+tasks.named("sourcesJar") {
+    dependsOn(tasks.named("generateBuildConfig"))
 }
