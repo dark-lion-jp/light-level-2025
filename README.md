@@ -16,10 +16,10 @@ some improvements implemented.
 
 ## Dependencies
 
-You can find the versions in the description of each file.
+You can find the versions in the description of each release.
 
 - Fabric Loader
-    - [Download it](https://fabricmc.net/use/installer/) on fabricmc.net
+    - [Download it](https://fabricmc.net/use/installer/) on fabricmc[]().net
 
 - Fabric API
     - [Download it](https://modrinth.com/mod/fabric-api) on modrinth
@@ -98,6 +98,16 @@ The rendering on a target block will be skipped if:
 If a non-colliding block is above the target block and its appearance obstructs the text, the light
 level will be shown above the visual.
 
+### Caching
+
+This mod caches information about block positions and the text to be rendered, storing it in memory
+for faster access.
+
+By setting the cache update frequency in frames, the update rate automatically adjusts based on
+FPS — updating more frequently in high-FPS environments and less frequently in low-FPS ones.
+
+You can change the update frequency via `cache/update_interval_frames` in the config file.
+
 ### Culling
 
 This mod does not render the light level for a target block that is invisible to the player.
@@ -110,7 +120,7 @@ You can change the following values in `config/light-level-2025.yaml`:
     - `horizontal`: Maximum horizontal distance for rendering
     - `vertical`: Maximum vertical distance for rendering
 
-- **block** (The `blacklist` takes precedence.)
+- **block** (`blacklist` takes precedence.)
     - `blacklist`: Blocks to exclude from rendering
     - `whitelist`: Blocks to include in rendering
 
