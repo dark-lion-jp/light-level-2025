@@ -31,12 +31,12 @@ You can find the versions in the description of each file.
 
 #### Overworld
 
-- GREEN: Mobs cannot spawn
+- GREEN: Hostile mobs cannot spawn
     - Block Light >= 1
-- YELLOW: Mobs can spawn at night
+- YELLOW: Hostile mobs can spawn at night
     - Block Light = 0
     - Sky Light >= 8
-- RED: Mobs can always potentially spawn
+- RED: Hostile mobs can always potentially spawn
     - Block Light = 0
     - Sky Light <= 7
 
@@ -80,10 +80,10 @@ The rendering on a target block will be skipped if:
         - stairs
 - The target block does not have a full square top surface.
     - **Examples Excluded**:
-        - right-side-up slabs
+        - bottom slabs
         - right-side-up stairs
     - **Examples Not Excluded**:
-        - up-side-down slabs
+        - top slabs
         - up-side-down stairs
 - A block above the target block has a collision shape.
     - **Examples Excluded**:
@@ -101,3 +101,29 @@ level will be shown above the visual.
 ### Culling
 
 This mod does not render the light level for a target block that is invisible to the player.
+
+## Configuration
+
+You can change the following values in `config/light-level-2025.yaml`:
+
+- **render_distance**
+    - `horizontal`: Maximum horizontal distance for rendering
+    - `vertical`: Maximum vertical distance for rendering
+
+- **block** (The `blacklist` takes precedence.)
+    - `blacklist`: Blocks to exclude from rendering
+    - `whitelist`: Blocks to include in rendering
+
+- **text**
+    - **color**
+        - `safe`: Light level where hostile mobs cannot spawn
+        - `warning`: Light level where hostile mobs can spawn in Overworld at night
+        - `danger`: Light level where hostile mobs can always potentially spawn
+        - `neutral`: Display color for unknown or unsupported dimensions
+    - **scale**
+        - `normal`: Text size for normal state
+        - `debug`: Text size for debug screen
+    - `offset_y_base`: Height to offset the text from the block
+
+- **cache**
+    - `update_interval_frames`: Frequency in frames to update the block cache
