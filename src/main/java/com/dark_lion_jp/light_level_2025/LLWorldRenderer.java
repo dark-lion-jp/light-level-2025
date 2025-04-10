@@ -260,11 +260,6 @@ public class LLWorldRenderer {
       return false;
     }
 
-    // Only render if the block below is opaque.
-    if (!blockStateBelow.isOpaque()) {
-      return false;
-    }
-
     // Do not render if the current position is not air-like (has a collision shape).
     if (!blockStateToCheck.getCollisionShape(world, positionToCheck).isEmpty()) {
       return false;
@@ -278,6 +273,11 @@ public class LLWorldRenderer {
     // Exception for specific blocks below that allow spawning despite being non-full.
     if (config.getBlockWhitelist().contains(blockBelow)) {
       return true;
+    }
+
+    // Only render if the block below is opaque.
+    if (!blockStateBelow.isOpaque()) {
+      return false;
     }
 
     // Check if the block below has a full upward-facing surface for spawning.
