@@ -8,8 +8,8 @@
     "dark-lion-jp"
   ],
   "contact": {
-    "homepage": "",
-    "sources": ""
+    "homepage": "https://modrinth.com/mod/light-level-2025",
+    "sources": "https://github.com/dark-lion-jp/light-level-2025"
   },
   "license": "MIT",
   "icon": "assets/light_level_2025/icon.png",
