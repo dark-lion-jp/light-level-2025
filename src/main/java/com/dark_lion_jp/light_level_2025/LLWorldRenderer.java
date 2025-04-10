@@ -1,12 +1,11 @@
 package com.dark_lion_jp.light_level_2025;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.render.Camera;
@@ -28,82 +27,54 @@ import org.joml.Quaternionf;
 
 public class LLWorldRenderer {
 
-  // Configuration constants for text rendering
-  private static final int TEXT_COLOR_DANGER = 0xFF4040;   // Red: Indicates that mobs can always spawn.
-  private static final int TEXT_COLOR_NEUTRAL = 0xFFFFFF; // White: Used for unknown or unsupported dimensions.
-  private static final int TEXT_COLOR_SAFE = 0x40FF40;     // Green: Indicates that mobs cannot spawn.
-  private static final int TEXT_COLOR_WARNING = 0xFFFF40; // Yellow: Indicates that mobs can spawn at night in the OverWorld.
+  private static Config config;
 
-  private static final float TEXT_OFFSET_Y_BASE = 0.1f;    // Base vertical offset for the text position.
-  private static final float TEXT_SCALE_FOR_DEBUG =
-      1 / 48f;   // Text scale used when the debug screen is enabled.
-  private static final float TEXT_SCALE_NORMAL = 1 / 32f;  // Normal text scale.
+  private static final List<BlockCached> blocksCached = new ArrayList<>();
+  private static int frameCounter = 0;
 
-  // Configuration constants for rendering distance
-  private static final int RENDER_DISTANCE_HORIZONTAL = 16;    // Horizontal rendering range around the player.
-  private static final int RENDER_DISTANCE_VERTICAL = 8;      // Vertical rendering range around the player.
+  private static class BlockCached {
 
-  // List of blocks that should not have light levels rendered above them
-  private static final List<Block> BLOCKS_EXCLUDED_FROM_RENDERING = Arrays.asList(
-      Blocks.AIR,
-      Blocks.BARRIER,
-      Blocks.BEDROCK,
-      Blocks.CHAIN_COMMAND_BLOCK,
-      Blocks.COMMAND_BLOCK,
-      Blocks.REPEATING_COMMAND_BLOCK
-  );
+    public final BlockPos position;
+    public final String text;
+    public final float textScale;
+    public final int textColor;
+    public final float textOffsetY;
 
-  // List of blocks below that exceptionally allow mob spawning
-  private static final List<Block> BLOCKS_BELOW_ALLOWING_SPAWN_EXCEPTION = Arrays.asList(
-      Blocks.MUD,
-      Blocks.SLIME_BLOCK,
-      Blocks.SOUL_SAND
-  );
+    public BlockCached(BlockPos position, String text, float textScale, int textColor,
+        float textYOffset) {
+      this.position = position.toImmutable();
+      this.text = text;
+      this.textScale = textScale;
+      this.textColor = textColor;
+      this.textOffsetY = textYOffset;
+    }
+  }
 
   /**
    * Draws the light level text at the specified position.
    *
-   * @param matrices               The matrix stack for rendering transformations.
-   * @param textRenderer           The text renderer instance.
-   * @param bufferSource           The vertex consumer provider.
-   * @param positionToDraw         The position to draw the text at.
-   * @param blockBoundingBoxDrawAt The optional bounding box of the block at the drawing position.
-   * @param cameraRotation         The camera rotation.
-   * @param blockLightLevel        The block-light level at the position.
-   * @param skyLightLevel          The sky-light level at the position.
-   * @param shouldShowBothValues   Whether to show both block-light and sky-light levels.
-   * @param textColor              The color of the text.
-   * @param textScale              The scale of the text.
+   * @param matrices       The matrix stack for rendering transformations.
+   * @param textRenderer   The text renderer instance.
+   * @param bufferSource   The vertex consumer provider.
+   * @param positionToDraw The position to draw the text at.
+   * @param cameraRotation The camera rotation.
+   * @param textToDraw     The text to be drawn.
+   * @param textScale      The scale of the text.
+   * @param textColor      The color of the text.
+   * @param textOffsetY    The Y offset for the text to avoid overlapping with blocks.
    */
   private static void drawLightLevelText(
       MatrixStack matrices,
       TextRenderer textRenderer,
       VertexConsumerProvider.Immediate bufferSource,
       BlockPos positionToDraw,
-      Optional<Box> blockBoundingBoxDrawAt,
       Quaternionf cameraRotation,
-      int blockLightLevel,
-      int skyLightLevel,
-      boolean shouldShowBothValues,
+      String textToDraw,
+      float textScale,
       int textColor,
-      float textScale
+      float textOffsetY
   ) {
     matrices.push();
-
-    // Determine the text to render.
-    String textToRender;
-    if (shouldShowBothValues) {
-      textToRender = "■" + blockLightLevel + " ☀" + skyLightLevel;
-    } else {
-      textToRender = String.valueOf(blockLightLevel);
-    }
-    float textWidthScaled = textRenderer.getWidth(textToRender) * textScale;
-    float textHeightScaled = textRenderer.fontHeight * textScale;
-
-    // Calculate the base Y offset for the text, considering potential overlap with the block.
-    float textOffsetY = getTextOffsetY(blockBoundingBoxDrawAt,
-        textWidthScaled,
-        textHeightScaled);
 
     // Translate to the drawing position.
     matrices.translate(
@@ -119,10 +90,10 @@ public class LLWorldRenderer {
     matrices.scale(textScale, -textScale, textScale);
 
     // Draw the text with shadow.
-    float textWidth = textRenderer.getWidth(textToRender);
+    float textWidth = textRenderer.getWidth(textToDraw);
     Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
     textRenderer.draw(
-        Text.of(textToRender),
+        Text.of(textToDraw),
         -textWidth / 2.0f,
         -textRenderer.fontHeight / 2.0f,
         textColor,
@@ -147,32 +118,32 @@ public class LLWorldRenderer {
    * @return The color code for the text.
    */
   private static int getTextColor(World world, int blockLightLevel, int skyLightLevel) {
-    int textColor;
+    Config.Hex textColorHex;
     Identifier currentDimension = world.getRegistryKey().getValue();
     if (currentDimension.equals(World.OVERWORLD.getValue())) {
       if (blockLightLevel > 0) {
-        textColor = TEXT_COLOR_SAFE;
+        textColorHex = config.text.color.safe;
       } else if (skyLightLevel > 7) {
-        textColor = TEXT_COLOR_WARNING;
+        textColorHex = config.text.color.warning;
       } else {
-        textColor = TEXT_COLOR_DANGER;
+        textColorHex = config.text.color.danger;
       }
     } else if (currentDimension.equals(World.NETHER.getValue())) {
       if (blockLightLevel > 11) {
-        textColor = TEXT_COLOR_SAFE;
+        textColorHex = config.text.color.safe;
       } else {
-        textColor = TEXT_COLOR_DANGER;
+        textColorHex = config.text.color.danger;
       }
     } else if (currentDimension.equals(World.END.getValue())) {
       if (blockLightLevel > 0) {
-        textColor = TEXT_COLOR_SAFE;
+        textColorHex = config.text.color.safe;
       } else {
-        textColor = TEXT_COLOR_DANGER;
+        textColorHex = config.text.color.danger;
       }
     } else {
-      textColor = TEXT_COLOR_NEUTRAL;
+      textColorHex = config.text.color.neutral;
     }
-    return textColor;
+    return textColorHex.value;
   }
 
   /**
@@ -186,7 +157,7 @@ public class LLWorldRenderer {
   private static float getTextOffsetY(Optional<Box> blockBoundingBoxDrawAt,
       float textWidthScaled,
       float textHeightScaled) {
-    float textOffsetY = TEXT_OFFSET_Y_BASE;
+    float textOffsetY = config.text.offset_y_base;
 
     // If the block has a visual shape, check for potential XZ-axis overlap at any rotation.
     if (blockBoundingBoxDrawAt.isPresent()) {
@@ -223,83 +194,45 @@ public class LLWorldRenderer {
       return;
     }
 
-    Optional<Frustum> frustum = Optional.ofNullable(worldRenderContext.frustum());
-
     MatrixStack matrices = worldRenderContext.matrixStack();
     if (matrices == null) {
       return;
     }
 
+    config = LightLevel2025.getConfig();
     World world = client.world;
+    Optional<Frustum> frustum = Optional.ofNullable(worldRenderContext.frustum());
     TextRenderer gameTextRenderer = client.textRenderer;
-    VertexConsumerProvider.Immediate bufferSource = client.getBufferBuilders()
-        .getEntityVertexConsumers();
+    PlayerEntity player = client.player;
+    BlockPos playerPosition = player.getBlockPos();
+
+    frameCounter++;
+    if (frameCounter >= config.cache.update_interval_frames) {
+      boolean shouldShowBothValues = client.getDebugHud().shouldShowDebugHud();
+      updateRenderTargets(world, frustum, gameTextRenderer, playerPosition, shouldShowBothValues);
+      frameCounter = 0;
+    }
 
     Camera camera = worldRenderContext.camera();
     Vec3d cameraPosition = camera.getPos();
-    Quaternionf cameraRotation = new Quaternionf(camera.getRotation());
-
     matrices.push();
     matrices.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
 
-    boolean shouldShowBothValues = client.getDebugHud().shouldShowDebugHud();
-    float textScale = shouldShowBothValues ? TEXT_SCALE_FOR_DEBUG : TEXT_SCALE_NORMAL;
-
-    PlayerEntity player = client.player;
-    BlockPos playerPosition = player.getBlockPos();
-    BlockPos.Mutable positionToRenderAt = playerPosition.mutableCopy();
-    int renderRangeHorizontal = RENDER_DISTANCE_HORIZONTAL;
-    int renderRangeVertical = RENDER_DISTANCE_VERTICAL;
-
-    for (int offsetX = -renderRangeHorizontal; offsetX <= renderRangeHorizontal; offsetX++) {
-      for (int offsetZ = -renderRangeHorizontal; offsetZ <= renderRangeHorizontal;
-          offsetZ++) {
-        for (int offsetY = -renderRangeVertical; offsetY <= renderRangeVertical; offsetY++) {
-          positionToRenderAt.set(
-              playerPosition.getX() + offsetX,
-              playerPosition.getY() + offsetY,
-              playerPosition.getZ() + offsetZ
-          );
-
-          if (positionToRenderAt.getSquaredDistance(playerPosition)
-              > renderRangeHorizontal * renderRangeHorizontal * 1.5) {
-            continue;
-          }
-
-          // Get the visual shape of the block at the drawing position.
-          BlockState blockStateRenderAt = world.getBlockState(positionToRenderAt);
-          VoxelShape blockVisualShapeRenderAt = blockStateRenderAt.getOutlineShape(world,
-              positionToRenderAt);
-          Optional<Box> blockBoundingBoxRenderAt;
-          if (blockVisualShapeRenderAt.isEmpty()) {
-            blockBoundingBoxRenderAt = Optional.empty();
-          } else {
-            blockBoundingBoxRenderAt = Optional.of(blockVisualShapeRenderAt.getBoundingBox());
-          }
-          if (!shouldRenderLightLevel(world, frustum, positionToRenderAt,
-              blockStateRenderAt, blockBoundingBoxRenderAt)) {
-            continue;
-          }
-
-          int blockLightLevel = world.getLightLevel(LightType.BLOCK, positionToRenderAt);
-          int skyLightLevel = world.getLightLevel(LightType.SKY, positionToRenderAt);
-          int textColor = getTextColor(world, blockLightLevel, skyLightLevel);
-
-          drawLightLevelText(
-              matrices,
-              gameTextRenderer,
-              bufferSource,
-              positionToRenderAt,
-              blockBoundingBoxRenderAt,
-              cameraRotation,
-              blockLightLevel,
-              skyLightLevel,
-              shouldShowBothValues,
-              textColor,
-              textScale
-          );
-        }
-      }
+    VertexConsumerProvider.Immediate bufferSource = client.getBufferBuilders()
+        .getEntityVertexConsumers();
+    Quaternionf cameraRotation = new Quaternionf(camera.getRotation());
+    for (BlockCached target : blocksCached) {
+      drawLightLevelText(
+          matrices,
+          gameTextRenderer,
+          bufferSource,
+          target.position,
+          cameraRotation,
+          target.text,
+          target.textScale,
+          target.textColor,
+          target.textOffsetY
+      );
     }
 
     matrices.pop();
@@ -310,23 +243,20 @@ public class LLWorldRenderer {
    * determines if a hostile mob could potentially spawn at this location based on the block's
    * properties and visibility within the frustum.
    *
-   * @param world                   The current game world.
-   * @param frustum                 The optional frustum for visibility checking.
-   * @param positionToCheck         The position to check.
-   * @param blockStateToCheck       The block state at the position to check.
-   * @param blockBoundingBoxToCheck The optional bounding box of the block at the position to
-   *                                check.
+   * @param world             The current game world.
+   * @param frustum           The optional frustum for visibility checking.
+   * @param positionToCheck   The position to check.
+   * @param blockStateToCheck The block state at the position to check. check.
    * @return True if the light level should be rendered, false otherwise.
    */
   private static boolean shouldRenderLightLevel(World world,
-      Optional<Frustum> frustum, BlockPos positionToCheck, BlockState blockStateToCheck,
-      Optional<Box> blockBoundingBoxToCheck) {
+      Optional<Frustum> frustum, BlockPos positionToCheck, BlockState blockStateToCheck) {
     BlockPos positionBelow = positionToCheck.down();
     BlockState blockStateBelow = world.getBlockState(positionBelow);
     Block blockBelow = blockStateBelow.getBlock();
 
     // Do not render light levels above excluded blocks.
-    if (BLOCKS_EXCLUDED_FROM_RENDERING.contains(blockBelow)) {
+    if (config.getBlockBlacklist().contains(blockBelow)) {
       return false;
     }
 
@@ -341,22 +271,12 @@ public class LLWorldRenderer {
     }
 
     // Do not render if the block is outside the frustum.
-    if (frustum.isPresent() && blockBoundingBoxToCheck.isPresent()) {
-      Box blockBoundingBoxWithCoordinates = new Box(
-          positionToCheck.getX() + blockBoundingBoxToCheck.get().minX,
-          positionToCheck.getY() + blockBoundingBoxToCheck.get().minY,
-          positionToCheck.getZ() + blockBoundingBoxToCheck.get().minZ,
-          positionToCheck.getX() + blockBoundingBoxToCheck.get().maxX,
-          positionToCheck.getY() + blockBoundingBoxToCheck.get().maxY,
-          positionToCheck.getZ() + blockBoundingBoxToCheck.get().maxZ
-      );
-      if (!frustum.get().isVisible(blockBoundingBoxWithCoordinates)) {
-        return false;
-      }
+    if (frustum.isPresent() && !frustum.get().isVisible(new Box(positionToCheck))) {
+      return false;
     }
 
     // Exception for specific blocks below that allow spawning despite being non-full.
-    if (BLOCKS_BELOW_ALLOWING_SPAWN_EXCEPTION.contains(blockBelow)) {
+    if (config.getBlockWhitelist().contains(blockBelow)) {
       return true;
     }
 
@@ -378,5 +298,63 @@ public class LLWorldRenderer {
     }
 
     return false;
+  }
+
+  private static void updateRenderTargets(World world, Optional<Frustum> frustum,
+      TextRenderer textRenderer, BlockPos playerPosition, boolean shouldShowBothValues) {
+    blocksCached.clear();
+
+    BlockPos.Mutable positionToRenderAt = new BlockPos.Mutable();
+    int renderRangeHorizontal = config.render_distance.horizontal;
+    int renderRangeVertical = config.render_distance.vertical;
+    double maxSquaredDistance = renderRangeHorizontal * renderRangeHorizontal * 1.5;
+
+    for (int dx = -renderRangeHorizontal; dx <= renderRangeHorizontal; dx++) {
+      for (int dz = -renderRangeHorizontal; dz <= renderRangeHorizontal; dz++) {
+        for (int dy = -renderRangeVertical; dy <= renderRangeVertical; dy++) {
+          positionToRenderAt.set(playerPosition.getX() + dx, playerPosition.getY() + dy,
+              playerPosition.getZ() + dz);
+          if (positionToRenderAt.getSquaredDistance(playerPosition) > maxSquaredDistance) {
+            continue;
+          }
+
+          BlockState blockStateRenderAt = world.getBlockState(positionToRenderAt);
+          if (!shouldRenderLightLevel(world, frustum, positionToRenderAt, blockStateRenderAt)) {
+            continue;
+          }
+
+          int blockLightLevel = world.getLightLevel(LightType.BLOCK, positionToRenderAt);
+          int skyLightLevel = world.getLightLevel(LightType.SKY, positionToRenderAt);
+          int textColor = getTextColor(world, blockLightLevel, skyLightLevel);
+
+          VoxelShape blockVisualShapeRenderAt = blockStateRenderAt.getOutlineShape(world,
+              positionToRenderAt);
+          Optional<Box> blockBoundingBoxRenderAt;
+          if (blockVisualShapeRenderAt.isEmpty()) {
+            blockBoundingBoxRenderAt = Optional.empty();
+          } else {
+            blockBoundingBoxRenderAt = Optional.of(blockVisualShapeRenderAt.getBoundingBox());
+          }
+
+          String textToRender;
+          if (shouldShowBothValues) {
+            textToRender = "■" + blockLightLevel + " ☀" + skyLightLevel;
+          } else {
+            textToRender = String.valueOf(blockLightLevel);
+          }
+          float textScale =
+              shouldShowBothValues ? config.text.scale.debug : config.text.scale.normal;
+          float textWidthScaled = textRenderer.getWidth(textToRender) * textScale;
+          float textHeightScaled = textRenderer.fontHeight * textScale;
+          float textOffsetY = getTextOffsetY(blockBoundingBoxRenderAt,
+              textWidthScaled,
+              textHeightScaled);
+
+          blocksCached.add(
+              new BlockCached(positionToRenderAt.toImmutable(), textToRender, textScale, textColor,
+                  textOffsetY));
+        }
+      }
+    }
   }
 }

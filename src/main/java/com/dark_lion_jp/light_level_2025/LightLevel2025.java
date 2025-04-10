@@ -13,6 +13,8 @@ public class LightLevel2025 implements ClientModInitializer {
   private static final String TOGGLE_KEY_BIND = "key.light_level.toggle";
   private static KeyBinding keyToggle;
 
+  private static Config config;
+
   private static boolean enabled;
 
   public static void handleInputEvents() {
@@ -21,15 +23,22 @@ public class LightLevel2025 implements ClientModInitializer {
     }
   }
 
+  public static Config getConfig() {
+    return config;
+  }
+
   public static boolean isEnabled() {
     return enabled;
   }
 
   @Override
   public void onInitializeClient() {
+    config = new Config().load();
+
     KeyBindingRegistryImpl.addCategory(KEY_BIND_CATEGORY);
     KeyBindingHelper.registerKeyBinding(
         keyToggle = new KeyBinding(TOGGLE_KEY_BIND, GLFW.GLFW_KEY_F9, KEY_BIND_CATEGORY));
+
     WorldRenderEvents.LAST.register(LLWorldRenderer::render);
   }
 }
