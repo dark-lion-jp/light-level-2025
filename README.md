@@ -148,13 +148,13 @@ This mod does not render the light level for a target block that is invisible to
 
 You can customize the mod behavior via `config/light-level-2025.yaml`.
 
-- `render_distance`:
+- `render_distance`
     - `horizontal`: Maximum horizontal distance for rendering
         - Default: `16`
     - `vertical`: Maximum vertical distance for rendering
         - Default: `4`
 
-- `block`:
+- `block`
     - `blacklist`: Blocks to exclude from rendering
         - Default:
             - `minecraft:air`
@@ -169,7 +169,7 @@ You can customize the mod behavior via `config/light-level-2025.yaml`.
             - `minecraft:slime_block`
             - `minecraft:soul_sand`
 
-- `text`:
+- `text`
     - `color`:
         - `safe`: Light level where hostile mobs cannot spawn
             - Default: `40FF40`
@@ -187,6 +187,6 @@ You can customize the mod behavior via `config/light-level-2025.yaml`.
     - `offset_y_base`: Height to offset the text from the block
         - Default: `0.1`
 
-- `cache`:
+- `cache`
     - `update_interval_frames`: Frequency in frames to update the block cache
         - Default: `20`
