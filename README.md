@@ -107,26 +107,26 @@ The rendering on a target block will be skipped if:
     - `minecraft:repeating_command_block`
 
 - The target block is not opaque and visually transparent.
-    - **Examples Excluded**:
+    - Examples Excluded:
         - `minecraft:glass`
         - `minecraft:ice`
-    - **Examples Not Excluded**:
+    - Examples Not Excluded:
         - `minecraft:glowstone`
         - `minecraft:packed_ice`
 
 - The target block does not have a full square top surface.
-    - **Examples Excluded**:
+    - Examples Excluded:
         - bottom slabs
         - right-side-up stairs
-    - **Examples Not Excluded**:
+    - Examples Not Excluded:
         - top slabs
         - up-side-down stairs
 
 - A block above the target block has a collision shape.
-    - **Examples Excluded**:
+    - Examples Excluded:
         - `minecraft:ladder`
         - `minecraft:snow` (layers count >= 2)
-    - **Examples Not Excluded**:
+    - Examples Not Excluded:
         - `minecraft:vine`
         - `minecraft:snow` (layers count = 1)
 
