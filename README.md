@@ -187,6 +187,6 @@ You can customize the mod behavior via `config/light-level-2025.yaml`.
     - `offset_y_base`: Height to offset the text from the block
         - Default: `0.1`
 
-- **cache**:
+- `cache`:
     - `update_interval_frames`: Frequency in frames to update the block cache
         - Default: `20`
