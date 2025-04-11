@@ -9,8 +9,8 @@ import org.lwjgl.glfw.GLFW;
 
 public class LightLevel2025 implements ClientModInitializer {
 
-  private static final String KEY_BIND_CATEGORY = "key.light_level.category";
-  private static final String TOGGLE_KEY_BIND = "key.light_level.toggle";
+  private static final String KEY_BIND_CATEGORY = "key.light_level_2025.category";
+  private static final String TOGGLE_KEY_BIND = "key.light_level_2025.toggle";
   private static KeyBinding keyToggle;
 
   private static Config config;
