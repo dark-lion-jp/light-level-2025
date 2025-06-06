@@ -99,7 +99,9 @@ public class Config {
 
     @Override
     public Hex read(String value) {
-      return new Hex(Integer.parseInt(value, 16));
+      return new Hex(
+          0xFF000000 | Integer.parseInt(value, 16)
+      );
     }
   }
 
