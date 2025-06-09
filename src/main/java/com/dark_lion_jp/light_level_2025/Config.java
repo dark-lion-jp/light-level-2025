@@ -10,9 +10,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
@@ -39,16 +39,18 @@ public class Config {
 
   public static class block {
 
-    public List<String> blacklist = new ArrayList<>(Arrays.asList(
+    public Set<String> blacklist = new LinkedHashSet<>(Arrays.asList(
         "minecraft:air",
         "minecraft:barrier",
         "minecraft:bedrock",
         "minecraft:chain_command_block",
         "minecraft:command_block",
+        "minecraft:end_portal",
+        "minecraft:nether_portal",
         "minecraft:repeating_command_block"
     ));
 
-    public List<String> whitelist = new ArrayList<>(Arrays.asList(
+    public Set<String> whitelist = new LinkedHashSet<>(Arrays.asList(
         "minecraft:mud",
         "minecraft:slime_block",
         "minecraft:soul_sand"
@@ -63,10 +65,10 @@ public class Config {
 
     public static class color {
 
-      public Hex safe = new Hex(0x40FF40);
-      public Hex warning = new Hex(0xFFFF40);
-      public Hex danger = new Hex(0xFF4040);
-      public Hex neutral = new Hex(0xFFFFFF);
+      public Hex safe = new Hex(0xFF40FF40);
+      public Hex warning = new Hex(0xFFFFFF40);
+      public Hex danger = new Hex(0xFFFF4040);
+      public Hex neutral = new Hex(0xFFFFFFFF);
     }
 
     public static class scale {
@@ -94,7 +96,7 @@ public class Config {
 
     @Override
     public String write(Hex hex) {
-      return String.format("%06X", hex.value);
+      return String.format("%06X", hex.value & 0x00FFFFFF);
     }
 
     @Override
@@ -109,6 +111,22 @@ public class Config {
       .getInstance()
       .getConfigDir()
       .resolve(BuildConfig.CONFIG_PATH);
+
+  public Set<Block> getBlockBlacklist() {
+    return block
+        .blacklist
+        .stream()
+        .map(id -> Registries.BLOCK.get(Identifier.of(id)))
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+  }
+
+  public Set<Block> getBlockWhitelist() {
+    return block
+        .whitelist
+        .stream()
+        .map(id -> Registries.BLOCK.get(Identifier.of(id)))
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+  }
 
   public Config load() {
     File configFile = new File(String.valueOf(path));
@@ -127,7 +145,7 @@ public class Config {
       yamlReader.close();
 
       if (config.version != BuildConfig.CONFIG_VERSION) {
-        config.version = BuildConfig.CONFIG_VERSION;
+        config.upgrade();
         config.save();
       }
 
@@ -158,19 +176,14 @@ public class Config {
     }
   }
 
-  public List<Block> getBlockBlacklist() {
-    return block
-        .blacklist
-        .stream()
-        .map(id -> Registries.BLOCK.get(Identifier.of(id)))
-        .collect(Collectors.toList());
-  }
+  public void upgrade() {
+    if (this.version < 2) {
+      this.block.blacklist.addAll(Arrays.asList(
+          "minecraft:end_portal",
+          "minecraft:nether_portal"
+      ));
+    }
 
-  public List<Block> getBlockWhitelist() {
-    return block
-        .whitelist
-        .stream()
-        .map(id -> Registries.BLOCK.get(Identifier.of(id)))
-        .collect(Collectors.toList());
+    this.version = BuildConfig.CONFIG_VERSION;
   }
 }
