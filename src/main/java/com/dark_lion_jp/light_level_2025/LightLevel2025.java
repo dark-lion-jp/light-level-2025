@@ -39,6 +39,6 @@ public class LightLevel2025 implements ClientModInitializer {
     KeyBindingHelper.registerKeyBinding(
         keyToggle = new KeyBinding(TOGGLE_KEY_BIND, GLFW.GLFW_KEY_F9, KEY_BIND_CATEGORY));
 
-    WorldRenderEvents.LAST.register(LLWorldRenderer::render);
+    WorldRenderEvents.AFTER_ENTITIES.register(LLWorldRenderer::render);
   }
 }
