@@ -283,19 +283,29 @@ public class LLWorldRenderer {
     }
 
     // Perform a raycast from the camera to the target block to check for line-of-sight obstruction.
-    RaycastContext raycastContext = new RaycastContext(
+    RaycastContext raycastContextOfCenter = new RaycastContext(
         cameraPosition,
         Vec3d.ofCenter(positionToCheck),
         RaycastContext.ShapeType.COLLIDER,
         RaycastContext.FluidHandling.NONE,
         player
     );
-    BlockHitResult hitResult = world.raycast(raycastContext);
+    RaycastContext raycastContextOfBottomCenter = new RaycastContext(
+        cameraPosition,
+        Vec3d.ofBottomCenter(positionToCheck),
+        RaycastContext.ShapeType.COLLIDER,
+        RaycastContext.FluidHandling.NONE,
+        player
+    );
+    BlockHitResult hitResultOfCenter = world.raycast(raycastContextOfCenter);
+    BlockHitResult hitResultOfBottomCenter = world.raycast(raycastContextOfBottomCenter);
     // If the raycast hits a different block before reaching the target block,
     // and that hit block is opaque, then the view is obstructed.
     if (
-        !hitResult.getBlockPos().equals(positionToCheck) &&
-            world.getBlockState(hitResult.getBlockPos()).isOpaque()
+        !hitResultOfCenter.getBlockPos().equals(positionToCheck) &&
+            world.getBlockState(hitResultOfCenter.getBlockPos()).isOpaque() &&
+            !hitResultOfBottomCenter.getBlockPos().equals(positionToCheck) &&
+            world.getBlockState(hitResultOfBottomCenter.getBlockPos()).isOpaque()
     ) {
       return false;
     }
