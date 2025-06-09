@@ -104,6 +104,8 @@ The rendering on a target block will be skipped if:
     - `minecraft:bedrock`
     - `minecraft:chain_command_block`
     - `minecraft:command_block`
+    - `minecraft:end_portal`
+    - `minecraft:nether_portal`
     - `minecraft:repeating_command_block`
 
 - The target block is not opaque and visually transparent.
@@ -162,6 +164,8 @@ You can customize the mod behavior via `config/light-level-2025.yaml`.
             - `minecraft:bedrock`
             - `minecraft:chain_command_block`
             - `minecraft:command_block`
+            - `minecraft:end_portal`
+            - `minecraft:nether_portal`
             - `minecraft:repeating_command_block`
     - `whitelist`: Blocks to include in rendering
         - Default:
