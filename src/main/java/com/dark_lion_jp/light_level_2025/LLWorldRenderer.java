@@ -113,6 +113,40 @@ public class LLWorldRenderer {
   }
 
   /**
+   * Determines whether the current position is "safe" based on block and sky light levels, considering
+   * the current dimension.
+   *
+   * @param world           The current game world.
+   * @param blockLightLevel The block light level at the position.
+   * @param skyLightLevel   The sky light level at the position.
+   * @return true or false
+   */
+  private static boolean isSafe(World world, int blockLightLevel, int skyLightLevel) {
+    Identifier currentDimension = world.getRegistryKey().getValue();
+    if (currentDimension.equals(World.OVERWORLD.getValue())) {
+      if (blockLightLevel > 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else if (currentDimension.equals(World.NETHER.getValue())) {
+      if (blockLightLevel > 11) {
+        return true;
+      } else {
+        return false;
+      }
+    } else if (currentDimension.equals(World.END.getValue())) {
+      if (blockLightLevel > 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+        return false;
+    }
+  }
+
+  /**
    * Determines the color of the light level text based on block and sky light levels, considering
    * the current dimension.
    *
@@ -388,6 +422,11 @@ public class LLWorldRenderer {
           // Get light levels and determine text color.
           int blockLightLevel = world.getLightLevel(LightType.BLOCK, positionToRenderAt);
           int skyLightLevel = world.getLightLevel(LightType.SKY, positionToRenderAt);
+
+          if (config.text.hide_safe && isSafe(world, blockLightLevel, skyLightLevel)) {
+            continue;
+          }
+
           int textColor = getTextColor(world, blockLightLevel, skyLightLevel);
 
           // Get the bounding box of the block at the render position for text offset calculation.
