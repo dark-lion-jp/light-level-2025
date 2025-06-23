@@ -194,3 +194,13 @@ You can customize the mod behavior via `config/light-level-2025.yaml`.
 - `cache`
     - `update_interval_frames`: Frequency in frames to update the block cache
         - Default: `20`
+
+## Contribution
+
+We welcome contributions from the community!
+
+To contribute, please fork the repository and create a pull request on GitHub.
+We appreciate your help in making this project even better!
+
+Please note that when we use a LLM for code proofreading, aspects of the code might change.
+This isn't a reflection of any dissatisfaction or shortcomings with your original code.
