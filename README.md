@@ -190,7 +190,7 @@ You can customize the mod behavior via `config/light-level-2025.yaml`.
             - Default: `0.020833334`
     - `offset_y_base`: Height to offset the text from the block
         - Default: `0.1`
-    - `hide_safe`: Hides light values that are considered "safe"
+    - `hide_safe`: Hides light level values that are considered "safe"
         - Default: `false`
 
 - `cache`
