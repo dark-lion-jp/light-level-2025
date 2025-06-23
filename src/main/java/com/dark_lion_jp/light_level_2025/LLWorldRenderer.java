@@ -185,6 +185,34 @@ public class LLWorldRenderer {
   }
 
   /**
+   * Determines if a given position's light level is "safe" for mob spawning, considering the
+   * specific dimension.
+   *
+   * @param world           The current game world.
+   * @param blockLightLevel The block light level at the position.
+   * @return True if the light level is considered safe, false otherwise.
+   */
+  private static boolean isLightLevelSafe(World world, int blockLightLevel) {
+    // Retrieve the current dimension's identifier
+    Identifier currentDimension = world.getRegistryKey().getValue();
+
+    // Check safety rules based on the dimension
+    if (currentDimension.equals(World.OVERWORLD.getValue())) {
+      // In Overworld, light level > 0 is safe
+      return blockLightLevel > 0;
+    } else if (currentDimension.equals(World.NETHER.getValue())) {
+      // In Nether, light level > 11 is safe
+      return blockLightLevel > 11;
+    } else if (currentDimension.equals(World.END.getValue())) {
+      // In The End, light level > 0 is safe
+      return blockLightLevel > 0;
+    } else {
+      // For any other dimension, assume unsafe
+      return false;
+    }
+  }
+
+  /**
    * Renders the light levels around the player. This is the main rendering entry point.
    *
    * @param worldRenderContext The world render context provided by Fabric.
@@ -378,6 +406,12 @@ public class LLWorldRenderer {
             continue;
           }
 
+          // Get block light level and skip rendering if it's safe and the option is enabled.
+          int blockLightLevel = world.getLightLevel(LightType.BLOCK, positionToRenderAt);
+          if (config.text.hide_safe && isLightLevelSafe(world, blockLightLevel)) {
+            continue;
+          }
+
           BlockState blockStateRenderAt = world.getBlockState(positionToRenderAt);
           // Check if the light level should be rendered at this position based on various criteria.
           if (!shouldRenderLightLevel(world, player, frustum, cameraPosition, positionToRenderAt,
@@ -385,8 +419,7 @@ public class LLWorldRenderer {
             continue;
           }
 
-          // Get light levels and determine text color.
-          int blockLightLevel = world.getLightLevel(LightType.BLOCK, positionToRenderAt);
+          // Get sky light level and determine text color.
           int skyLightLevel = world.getLightLevel(LightType.SKY, positionToRenderAt);
           int textColor = getTextColor(world, blockLightLevel, skyLightLevel);
 
