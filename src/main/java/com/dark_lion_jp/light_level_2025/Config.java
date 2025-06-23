@@ -62,6 +62,7 @@ public class Config {
     public color color = new color();
     public scale scale = new scale();
     public float offset_y_base = 0.1f;
+    public boolean hide_safe = false;
 
     public static class color {
 
