@@ -2,7 +2,7 @@ package com.dark_lion_jp.light_level_2025;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.option.KeyBinding;
 import org.lwjgl.glfw.GLFW;
 
@@ -37,6 +37,7 @@ public class LightLevel2025 implements ClientModInitializer {
         keyToggle = new KeyBinding(TOGGLE_KEY_BIND, GLFW.GLFW_KEY_F9,
             KeyBinding.Category.GAMEPLAY));
 
+    WorldRenderEvents.END_EXTRACTION.register(LLWorldRenderer::extract);
     WorldRenderEvents.AFTER_ENTITIES.register(LLWorldRenderer::render);
   }
 }
