@@ -3,12 +3,13 @@ package com.dark_lion_jp.light_level_2025;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.RenderStateDataKey;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldExtractionContext;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -31,6 +32,8 @@ public class LLWorldRenderer {
   private static Config config;
 
   private static final List<BlockCached> blocksCached = new ArrayList<>();
+  private static final RenderStateDataKey<List<BlockCached>> LIGHT_LEVELS =
+      RenderStateDataKey.create(() -> "light-level-2025:light-levels");
   private static int frameCounter = 0;
 
   /**
@@ -70,7 +73,7 @@ public class LLWorldRenderer {
   private static void drawLightLevelText(
       MatrixStack matrices,
       TextRenderer textRenderer,
-      VertexConsumerProvider.Immediate bufferSource,
+      VertexConsumerProvider bufferSource,
       BlockPos positionToDraw,
       Quaternionf cameraRotation,
       String textToDraw,
@@ -213,11 +216,12 @@ public class LLWorldRenderer {
   }
 
   /**
-   * Renders the light levels around the player. This is the main rendering entry point.
+   * Extracts light levels while the world and camera may be safely accessed.
    *
-   * @param worldRenderContext The world render context provided by Fabric.
+   * @param worldRenderContext The world extraction context provided by Fabric.
    */
-  public static void render(WorldRenderContext worldRenderContext) {
+  public static void extract(WorldExtractionContext worldRenderContext) {
+    worldRenderContext.worldState().setData(LIGHT_LEVELS, null);
     if (!LightLevel2025.isEnabled()) {
       return;
     }
@@ -228,19 +232,13 @@ public class LLWorldRenderer {
       return;
     }
 
-    MatrixStack matrices = worldRenderContext.matrixStack();
-    if (matrices == null) {
-      return;
-    }
-
     config = LightLevel2025.getConfig();
     World world = client.world;
     Optional<Frustum> frustum = Optional.ofNullable(worldRenderContext.frustum());
     TextRenderer gameTextRenderer = client.textRenderer;
     PlayerEntity player = client.player;
     BlockPos playerPosition = player.getBlockPos();
-    Camera camera = worldRenderContext.camera();
-    Vec3d cameraPosition = camera.getPos();
+    Vec3d cameraPosition = worldRenderContext.worldState().cameraRenderState.pos;
 
     frameCounter++;
     // Update cached render targets at a configured interval.
@@ -251,15 +249,29 @@ public class LLWorldRenderer {
       frameCounter = 0;
     }
 
+    // Publish an immutable snapshot; drawing must not read the live world or mutable cache.
+    worldRenderContext.worldState().setData(LIGHT_LEVELS, List.copyOf(blocksCached));
+  }
+
+  /** Draws the extracted labels at the same AFTER_ENTITIES stage as before. */
+  public static void render(WorldRenderContext worldRenderContext) {
+    List<BlockCached> blocks = worldRenderContext.worldState().getData(LIGHT_LEVELS);
+    MatrixStack matrices = worldRenderContext.matrices();
+    if (blocks == null || matrices == null) {
+      return;
+    }
+
+    TextRenderer gameTextRenderer = MinecraftClient.getInstance().textRenderer;
+    Vec3d cameraPosition = worldRenderContext.worldState().cameraRenderState.pos;
     matrices.push();
     // Translate the rendering origin to the camera's position for correct world-space rendering.
     matrices.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
 
-    VertexConsumerProvider.Immediate bufferSource = client.getBufferBuilders()
-        .getEntityVertexConsumers();
-    Quaternionf cameraRotation = new Quaternionf(camera.getRotation());
+    VertexConsumerProvider bufferSource = worldRenderContext.consumers();
+    Quaternionf cameraRotation = new Quaternionf(
+        worldRenderContext.worldState().cameraRenderState.orientation);
     // Draw all cached light level texts.
-    for (BlockCached target : blocksCached) {
+    for (BlockCached target : blocks) {
       drawLightLevelText(
           matrices,
           gameTextRenderer,
