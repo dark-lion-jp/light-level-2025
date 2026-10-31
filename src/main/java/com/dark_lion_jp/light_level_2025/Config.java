@@ -15,9 +15,9 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.block.Block;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 
 public class Config {
 
@@ -117,7 +117,7 @@ public class Config {
     return block
         .blacklist
         .stream()
-        .map(id -> Registries.BLOCK.get(Identifier.of(id)))
+        .map(id -> BuiltInRegistries.BLOCK.getValue(Identifier.parse(id)))
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
@@ -125,7 +125,7 @@ public class Config {
     return block
         .whitelist
         .stream()
-        .map(id -> Registries.BLOCK.get(Identifier.of(id)))
+        .map(id -> BuiltInRegistries.BLOCK.getValue(Identifier.parse(id)))
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
