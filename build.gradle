@@ -1,5 +1,5 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version '1.19.3'
+    id 'net.fabricmc.fabric-loom' version '1.19.4'
     id 'maven-publish'
 }
 
@@ -25,7 +25,7 @@ configurations {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    // Minecraft 26.3 ships with Mojang names and does not need mappings.
+    // Minecraft 26.4-snapshot-10 ships with Mojang names and does not need mappings.
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     // Fabric API. This is technically optional, but you probably want it anyway.
