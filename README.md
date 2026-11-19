@@ -1,7 +1,7 @@
 <div style="display: inline">
-  <img src="https://img.shields.io/badge/Minecraft-26.3-white">
+  <img src="https://img.shields.io/badge/Minecraft-26.4--snapshot--10-white">
   <img src="https://img.shields.io/badge/Fabric_Loader-0.20.1-white">
-  <img src="https://img.shields.io/badge/Fabric_API-0.165.0%2B26.3-white">
+  <img src="https://img.shields.io/badge/Fabric_API-0.166.3%2B26.4-white">
   <img src="https://img.shields.io/github/actions/workflow/status/dark-lion-jp/light-level-2025/build.yml?branch=main">
 </div>
 
@@ -18,7 +18,7 @@ some improvements implemented.
 
 You can find the dependencies in the description of each release.
 
-Minecraft 26.3 requires Java 25. Building this branch also requires JDK 25;
+Minecraft 26.4-snapshot-10 requires Java 25. Building this branch also requires JDK 25;
 use the checked-in Gradle wrapper. The game is no longer obfuscated, so this
 branch uses its official names without Yarn mappings.
 
