@@ -23,9 +23,9 @@
     "light_level_2025.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.20.1",
-    "minecraft": "~26.4-",
+    "fabricloader": ">=0.20.0",
+    "minecraft": "26.4-pre.1",
     "java": ">=25",
-    "fabric-api": ">=0.166.3+26.4"
+    "fabric-api": ">=0.167.1+26.4"
   }
 }

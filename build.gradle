@@ -16,6 +16,18 @@ repositories {
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
+
+    if (System.getProperty('os.name') == 'Linux' && System.getProperty('os.arch') in ['aarch64', 'arm64']) {
+        // Preempt Loom's ARM64 rule that routes every LWJGL dependency exclusively to Central.
+        // The Minecraft FreeType fork is available through Loom's Mojang repository.
+        mavenCentral {
+            name = 'MavenCentralLWJGL'
+            content {
+                includeGroup('org.lwjgl')
+                excludeVersion('org.lwjgl', 'lwjgl-freetype', '3.4.3-mojang-2.15.0')
+            }
+        }
+    }
 }
 
 configurations {
@@ -25,10 +37,10 @@ configurations {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    // Minecraft 26.4-snapshot-10 ships with Mojang names and does not need mappings.
+    // Minecraft 26.4-pre-1 ships with Mojang names and does not need mappings.
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    // Fabric API. This is technically optional, but you probably want it anyway.
+    // Fabric API is required for client rendering and input events.
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // YamlBeans

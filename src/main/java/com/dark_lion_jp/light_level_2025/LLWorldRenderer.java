@@ -7,7 +7,7 @@ import java.util.Optional;
 import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
 import net.fabricmc.fabric.api.client.rendering.v1.RenderStateDataKey;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelSubmitContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -260,8 +260,8 @@ public class LLWorldRenderer {
     renderState.setData(LIGHT_LEVELS, List.copyOf(labels));
   }
 
-  /** Queues extracted labels after entity submissions at COLLECT_SUBMITS in 26.3. */
-  public static void render(LevelRenderContext worldRenderContext) {
+  /** Queues extracted labels after entity submissions at COLLECT_SUBMITS. */
+  public static void render(LevelSubmitContext worldRenderContext) {
     List<LabelRenderState> labels = ((FabricRenderState) worldRenderContext.levelState())
         .getData(LIGHT_LEVELS);
     PoseStack matrices = worldRenderContext.poseStack();
